@@ -7,33 +7,40 @@ import (
 	"strings"
 )
 
+// 1. Объединение (A U B)
 func setUnion(a, b *HashSet) *HashSet {
 	res := &HashSet{}
 	res.Init()
-	for i := 0; i < TableSize; i++ {
-		for cur := a.table[i].head; cur != nil; cur = cur.next { res.Add(cur.value) }
-		for cur := b.table[i].head; cur != nil; cur = cur.next { res.Add(cur.value) }
+	// Добавляем все элементы из A
+	for k := range a.data {
+		res.Add(k)
+	}
+	// Добавляем все элементы из B
+	for k := range b.data {
+		res.Add(k)
 	}
 	return res
 }
 
+// 2. Пересечение (A ∩ B)
 func setIntersection(a, b *HashSet) *HashSet {
 	res := &HashSet{}
 	res.Init()
-	for i := 0; i < TableSize; i++ {
-		for cur := a.table[i].head; cur != nil; cur = cur.next {
-			if b.Contains(cur.value) { res.Add(cur.value) }
+	for k := range a.data {
+		if b.Contains(k) {
+			res.Add(k)
 		}
 	}
 	return res
 }
 
+// 3. Разность (A \ B)
 func setDifference(a, b *HashSet) *HashSet {
 	res := &HashSet{}
 	res.Init()
-	for i := 0; i < TableSize; i++ {
-		for cur := a.table[i].head; cur != nil; cur = cur.next {
-			if !b.Contains(cur.value) { res.Add(cur.value) }
+	for k := range a.data {
+		if !b.Contains(k) {
+			res.Add(k)
 		}
 	}
 	return res
@@ -45,21 +52,20 @@ func runSubsets() {
 	a.Init()
 	b.Init()
 
-	// Используем bufio.Reader как единый источник ввода
 	reader := bufio.NewReader(os.Stdin)
 
 	fmt.Println("Введите элементы A (через пробел):")
 	lineA, _ := reader.ReadString('\n')
 	lineA = strings.TrimSpace(lineA)
-	for _, s := range strings.Fields(lineA) { 
-		a.Add(s) 
+	for _, s := range strings.Fields(lineA) {
+		a.Add(s)
 	}
 
 	fmt.Println("Введите элементы B (через пробел):")
 	lineB, _ := reader.ReadString('\n')
 	lineB = strings.TrimSpace(lineB)
-	for _, s := range strings.Fields(lineB) { 
-		b.Add(s) 
+	for _, s := range strings.Fields(lineB) {
+		b.Add(s)
 	}
 
 	fmt.Print("A = "); a.Print()

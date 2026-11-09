@@ -7,90 +7,98 @@ import (
 	"strings"
 )
 
-const TableSize = 10007
-
+// HashSet - структура для нашего множества
 type HashSet struct {
-	table [TableSize]ForwardList
+	data map[string]bool
 }
 
+// Инициализация множества
 func (s *HashSet) Init() {
-	for i := 0; i < TableSize; i++ { s.table[i].head = nil; s.table[i].tail = nil }
+	s.data = make(map[string]bool)
 }
 
-func (s *HashSet) hash(key string) int {
-	h := 5381
-	for _, c := range key { h = ((h << 5) + h) + int(c) }
-	return h % TableSize
-}
-
-func (s *HashSet) Add(key string) {
-	idx := s.hash(key)
-	cur := s.table[idx].head
-	for cur != nil {
-		if cur.value == key { return }
-		cur = cur.next
+// Добавление элемента (с проверкой на дубликат)
+func (s *HashSet) Add(val string) bool {
+	if s.data[val] {
+		return false // Уже есть
 	}
-	s.table[idx].PushSilent(key)
+	s.data[val] = true
+	return true
 }
 
-func (s *HashSet) Del(key string) {
-	idx := s.hash(key)
-	cur := s.table[idx].head
-	var prev *FNode
-	for cur != nil {
-		if cur.value == key {
-			if prev == nil { s.table[idx].head = cur.next } else { prev.next = cur.next }
-			if cur == s.table[idx].tail { s.table[idx].tail = prev }
-			return
-		}
-		prev = cur
-		cur = cur.next
-	}
+// Удаление элемента
+func (s *HashSet) Del(val string) {
+	delete(s.data, val)
 }
 
-func (s *HashSet) Contains(key string) bool {
-	idx := s.hash(key)
-	cur := s.table[idx].head
-	for cur != nil {
-		if cur.value == key { return true }
-		cur = cur.next
-	}
-	return false
+// Проверка наличия элемента
+func (s *HashSet) Contains(val string) bool {
+	return s.data[val]
 }
 
+// Вывод множества
 func (s *HashSet) Print() {
 	fmt.Print("{")
 	first := true
-	for i := 0; i < TableSize; i++ {
-		for cur := s.table[i].head; cur != nil; cur = cur.next {
-			if !first { fmt.Print(", ") }
-			fmt.Print(cur.value)
-			first = false
+	for k := range s.data {
+		if !first {
+			fmt.Print(", ")
 		}
+		fmt.Print(k)
+		first = false
 	}
 	fmt.Println("}")
 }
 
+// Обработка одной команды
+func processSetQuery(s *HashSet, query string) bool { // Возвращает false, если надо выйти
+	parts := strings.Fields(query)
+	if len(parts) == 0 {
+		return true
+	}
+
+	cmd := parts[0]
+	
+	if cmd == "SETADD" && len(parts) >= 2 {
+		if s.Add(parts[1]) {
+			fmt.Println("OK")
+		} else {
+			fmt.Println("ERROR: element already exists")
+		}
+	} else if cmd == "SETDEL" && len(parts) >= 2 {
+		s.Del(parts[1])
+		fmt.Println("OK")
+	} else if cmd == "SET_AT" && len(parts) >= 2 {
+		if s.Contains(parts[1]) {
+			fmt.Println("YES")
+		} else {
+			fmt.Println("NO")
+		}
+	} else if cmd == "exit" || cmd == "EXIT" {
+		return false
+	} else {
+		fmt.Println("ERROR: unknown command")
+	}
+	
+	return true
+}
+
 func runSets() {
-	fmt.Println("\n=== Задание 2: Множество ===")
+	fmt.Println("\n=== Задание 2: АТД Множество (Интерактив) ===")
+	fmt.Println("Команды: SETADD x, SETDEL x, SET_AT x")
+	fmt.Println("Для выхода: exit")
+
 	var s HashSet
 	s.Init()
 
-	scanner := bufio.NewScanner(os.Stdin)
+	reader := bufio.NewReader(os.Stdin)
 	for {
 		fmt.Print("> ")
-		if !scanner.Scan() { break }
-		line := scanner.Text()
-		if line == "exit" { break }
-		parts := strings.Fields(line)
-		if len(parts) < 2 { continue }
-
-		cmd, arg := parts[0], parts[1]
-		switch cmd {
-		case "SETADD": s.Add(arg); fmt.Println("OK")
-		case "SETDEL": s.Del(arg); fmt.Println("OK")
-		case "SET_AT":
-			if s.Contains(arg) { fmt.Println("YES") } else { fmt.Println("NO") }
+		line, _ := reader.ReadString('\n')
+		line = strings.TrimSpace(line)
+		
+		if !processSetQuery(&s, line) {
+			break
 		}
 	}
 }
